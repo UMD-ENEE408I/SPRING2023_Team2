@@ -3,8 +3,6 @@
 #include <Adafruit_MPU6050.h>
 #include <Encoder.h>
 
-
-
 #include "Wifi.h"
 #include <WiFiUdp.h>
 #include <iostream>
@@ -74,7 +72,7 @@ const char * udpAddress = "192.168.2.142"; // old ip  192.168.2.10
 const int udpPort = 3333; //ports for each, shark 1: 3333, shark 2: 2525, minnow: 2222
 
 
-//Are we currently connected?
+//Are we currently connected?---------------------
 bool connected = false;
 
 //The udp library class
@@ -100,6 +98,7 @@ void WiFiEvent(WiFiEvent_t event){
     }
 }
 
+//provided method
 void connectToWiFi(const char * ssid, const char * pwd){
   Serial.println("Connecting to WiFi network: " + String(ssid));
 
@@ -114,6 +113,7 @@ void connectToWiFi(const char * ssid, const char * pwd){
   Serial.println("Waiting for WIFI connection...");
 }
 
+//provided method
 void configure_imu() {
   // Try to initialize!
   if (!mpu.begin()) {
@@ -258,13 +258,10 @@ void setup() {
   connectToWiFi(networkName, networkPswd);
 
   Serial.println("Starting!");
-
-  Serial.println("Starting!");
 }
 
-void loop() { //aka main method
-  // Create the encoder objects after the motor has
-  // stopped, else some sort exception is triggered
+void loop() { //main method
+
   Encoder enc1(M1_ENC_A, M1_ENC_B);
   Encoder enc2(M2_ENC_A, M2_ENC_B);
 
@@ -330,21 +327,17 @@ void loop() { //aka main method
 
 
   while (true) {//LOOPS FOR INFINITY, where we do everything
-    //reuse 1 loop, and just use a conditional. 
-    //use a state/conditional in all the methods it calls so that determines what version/values it calls.
+    //version code for the shark versus the minnow
 
+    // Use cameras to make sure we are in world frame/ see if we are close enough to "catch the minnow".
+    // Use camera to get distance from betweent the sharks.
 
-    // also use cameras to make sure we are in world frame/ see if we are close enough to "catch the minnow"
-    //also minnow use camera to avoid the seekers.
-
-    //when uploading code to mice, set 1 as alltime_minnow with a constant variable.
     //each version will also just call the apackets, once for its own port.
 
 
     //1st thing in loop
-    //if for getting values from laptop
     if(connected){
-      // //Send a packet
+      // Send a packet
       // udp.beginPacket(udpAddress,udpPort);// inbetween is what we are sending to laptop/.py
       // udp.printf("Seconds since boot: %lu", millis()/1000);
       // //what we want to send to the python file is the sound that we read in, and the elapsed time
@@ -364,12 +357,13 @@ void loop() { //aka main method
         }
       }
     }
+
     //print the output we are recieving
     Serial.println(outpy[0]);
     Serial.print(" ");
     Serial.println(outpy[1]);
-    target_distance = outpy[0]; //new theta/angle
-    target_theta = outpy[1]; //new direction/distance
+    target_distance = outpy[0]; //new direction/distance 
+    target_theta = outpy[1]; //new theta/angle
 
 
 
@@ -417,7 +411,7 @@ void loop() { //aka main method
         }
       }
     } // end of waiting while loop
-    set_motors_pwm(left_pwm, right_pwm);//reset it to last value/speeds
+    //set_motors_pwm(left_pwm, right_pwm);//reset it to last value/speeds
 
     //now we can move to target.
 
@@ -447,7 +441,7 @@ void loop() { //aka main method
     // positive is counter clockwise
     float omega;
     read_imu(omega); // Could be expanded to read more things
-    omega -= bias_omega; // Remove the constant bias measured in the beginning
+    omega -= bias_omega; // Remove the constant bias measured in the beginning--------------------------to change theta just adjust omega
     theta = theta + omega * dt;
 
 
