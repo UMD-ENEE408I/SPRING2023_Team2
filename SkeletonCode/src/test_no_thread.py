@@ -20,8 +20,8 @@ distance1 = 0 # distance from shark1 to minnow
 distance2 = 0 # distance from shark2 to minnow
 #untested, and idk if it gets the right point
 
-cameraR = []
-camerap = []
+# cameraR = []
+# camerap = []
 #tag_size=0.16
 
 print("Initializing Camera")
@@ -107,9 +107,16 @@ def cammain():
             Tac = np.linalg.inv(Tca)
             p_cam_a = Tac @ p_cam_c
 
-
-            cameraR = distance
-            camerap = p_cam_a
+            
+            # append the set of values to list,
+            # return the distance and p_cam_a from res.tag_id, so we can get its position
+            return_tuple = (res.tag_id, distance, p_cam_a)
+            cameraR.append(distance)
+            camerap.append(p_cam_a)
+            camerap.append(return_tuple)
+            
+            
+            
             print("position:", p_cam_a.T )
             distance = "distance"
             p_cam_a = "p_cam_a"
@@ -197,17 +204,16 @@ def localize(c,r0,r1): # given the disatnce betwwen 2 mice, c, the 2 distances f
 # main loop
 if __name__ == '__main__':
 
-
-    # cam1 = Streaming()
-    # #cam1.__init__(cam1)
-    # thread1 = threading.Thread(target=cam1.cammain)
-
-    # print('test ',cameraR)
+    print('test ',cameraR)
 
 
 
     # we know where april tags are in world so, based on distance from those tags we can locate the robots in the world frame, 
     # then we can get the distance between the 2 sharks, length c.
+    tagX = [0,0] # x,y in our world coordinate frame we want to make.
+
+
+
 
 
 
@@ -233,7 +239,8 @@ if __name__ == '__main__':
 
 
     while True: # real main loop
-
+        cameraR = []
+        camerap = []
         cammain()
 
         (message, ip_address) = UDPServerSocket.recvfrom(max_buffer_size)
