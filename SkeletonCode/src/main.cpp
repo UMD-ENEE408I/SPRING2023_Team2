@@ -384,7 +384,7 @@ void loop() { //main method
   if(connected){
       udp.beginPacket(udpAddress, udpPort);// inbetween is what we are sending to laptop/.py
       udp.printf("Seconds since boot: %lu", stop_listening);
-      udp.write((uint8_t*)&stop_listening,sizeof(stop_listening));// would sent the 4 bits to the python file. udp 8-bit
+      udp.write((uint8_t*)&stop_listening, sizeof(stop_listening));// would sent the 4 bits to the python file. udp 8-bit
       //what we want to send to the python file is the sound that we read in, and the elapsed time
       udp.endPacket();
   }

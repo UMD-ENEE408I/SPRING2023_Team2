@@ -26,7 +26,7 @@ camerap = []
 
 class Streaming(object):
     def __init__(self):
-        print("Initializing Camera")
+        #print("Initializing Camera")
         at_detector = Detector(
             families="tag36h11",
             nthreads=1,
@@ -54,6 +54,7 @@ class Streaming(object):
 
 
     def find_pose_from_tag(K, detection):
+        tag_size=0.16
         m_half_size = tag_size / 2
 
         marker_center = np.array((0, 0, 0))
@@ -79,6 +80,31 @@ class Streaming(object):
 
 
     def cammain(self):
+        def find_pose_from_tag(K, detection):
+            tag_size=0.16
+            m_half_size = tag_size / 2
+
+            marker_center = np.array((0, 0, 0))
+            marker_points = []
+            marker_points.append(marker_center + (-m_half_size, m_half_size, 0))
+            marker_points.append(marker_center + ( m_half_size, m_half_size, 0))
+            marker_points.append(marker_center + ( m_half_size, -m_half_size, 0))
+            marker_points.append(marker_center + (-m_half_size, -m_half_size, 0))
+            _marker_points = np.array(marker_points)
+
+            object_points = _marker_points
+            image_points = detection.corners
+
+            pnp_ret = cv2.solvePnP(object_points, image_points, K, distCoeffs=None,flags=cv2.SOLVEPNP_IPPE_SQUARE)
+            
+            if pnp_ret[0] == False:
+                raise Exception('Error solving PnP')
+
+            r = pnp_ret[1] #rotation vector
+            p = pnp_ret[2] #translation vector
+
+            return p.reshape((3,)), r.reshape((3,))
+    
         vid = cv2.VideoCapture(0)
         tag_size=0.16 # tag size in meters
 

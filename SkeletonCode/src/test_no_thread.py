@@ -76,8 +76,9 @@ def find_pose_from_tag(K, detection):
     return p.reshape((3,)), r.reshape((3,))
 
 
-def cammain():
-    # vid = cv2.VideoCapture(0)
+def cammain(vi):
+    vid = vi
+    #cv2.VideoCapture(0)
     # tag_size=0.16 # tag size in meters
 
     try:
@@ -204,21 +205,13 @@ def localize(c,r0,r1): # given the disatnce betwwen 2 mice, c, the 2 distances f
 # main loop
 if __name__ == '__main__':
 
-    print('test ',cameraR)
+    #print('test ',cameraR)
 
 
 
     # we know where april tags are in world so, based on distance from those tags we can locate the robots in the world frame, 
     # then we can get the distance between the 2 sharks, length c.
     tagX = [0,0] # x,y in our world coordinate frame we want to make.
-
-
-
-
-
-
-
-
 
 
     # Creating initial default packets to send to the mouse
@@ -234,6 +227,9 @@ if __name__ == '__main__':
     UDPServerSocket3.bind((localIP, localPort3))
 
     vid = cv2.VideoCapture(0)
+    vid2 = cv2.VideoCapture(1)
+    vid3 = cv2.VideoCapture(2)
+
     tag_size=0.16 # tag size in meters
 
 
@@ -241,8 +237,14 @@ if __name__ == '__main__':
     while True: # real main loop
         cameraR = []
         camerap = []
-        cammain()
+        cammain(vid) # call/run camera
+        cammain(vid2) # call/run camera
+        cammain(vid3) # call/run camera
 
+        #get distance from camera to april tags.
+
+
+        #set up sockets
         (message, ip_address) = UDPServerSocket.recvfrom(max_buffer_size)
         print('Message received: {}'.format(message))
         (message2, ip_address2) = UDPServerSocket2.recvfrom(max_buffer_size) # 2nd socket case
@@ -274,35 +276,13 @@ if __name__ == '__main__':
         # send packets
         UDPServerSocket.sendto(packet_shark1, ip_address) # 1st robot
         UDPServerSocket2.sendto(packet_shark2, ip_address) #2nd robot
-
-
         # either need delay/condition to send movement to minnow. Or make it constant or move and stop.
         #send packet to minnow
         UDPServerSocket3.sendto(packet_minnow, ip_address)# 3rd robot
 
 
 
-
-        # what we do: use signals and speed of sound to find distance/radii and find the angles and disances.
-        
-        # what we need to produce/output: distance we want each mice to move, the heading/theta they need to rotate.
-
-
-# use cameras to get distacne C between the 2 robots.
-
-
-
-
-
-# for localization you need the x and y distances/difference from each other. Also need distance to the source, which is from signal/mic.
-# the x and y is probably from camera/world frame.
-
-# so 2 mice get their location from apriltag. Then you get the x and y parts so you compare those to each other.
-
-
-
-
-
+# end of code
 
 #use threading to listen/read in the microphone.
 #import threading
