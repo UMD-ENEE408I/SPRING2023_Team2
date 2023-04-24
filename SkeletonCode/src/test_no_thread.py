@@ -226,12 +226,12 @@ if __name__ == '__main__':
     UDPServerSocket3 = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)    # Bind to address and ip
     UDPServerSocket3.bind((localIP, localPort3))
 
-    # make sure this is how we call the 3 cameras from the 3 mice.
-    vid = cv2.VideoCapture(0)
-    vid2 = cv2.VideoCapture(1)
-    vid3 = cv2.VideoCapture(2)
+    # make sure this is how we call the 3 cameras from the 3 mice. based on all cameras connected to 1 computer.
+    vid = cv2.VideoCapture(0)# default value, so the 1st one attached
+    vid2 = cv2.VideoCapture(1)# might not be 1, need to check 
+    vid3 = cv2.VideoCapture(2)#might not be 2, need to check 
 
-    tag_size=0.16 # tag size in meters
+    tag_size = 0.16 # tag size in meters
 
     # sharks use april tags of the enviroment to get world frame and stay in bounds.
     #use distances from  environment to get the Distance between them.
@@ -245,9 +245,10 @@ if __name__ == '__main__':
     while True: # real main loop
         cameraR = []
         camerap = []
-        cammain(vid) # call/run camera
-        cammain(vid2) # call/run camera
-        cammain(vid3) # call/run camera
+        #might slow us down
+        cammain(vid) # call/run camera, minnow
+        cammain(vid2) # call/run camera, shark1
+        cammain(vid3) # call/run camera,shark2
 
         #get distance from camera to april tags.
 
