@@ -226,11 +226,19 @@ if __name__ == '__main__':
     UDPServerSocket3 = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)    # Bind to address and ip
     UDPServerSocket3.bind((localIP, localPort3))
 
+    # make sure this is how we call the 3 cameras from the 3 mice.
     vid = cv2.VideoCapture(0)
     vid2 = cv2.VideoCapture(1)
     vid3 = cv2.VideoCapture(2)
 
     tag_size=0.16 # tag size in meters
+
+    # sharks use april tags of the enviroment to get world frame and stay in bounds.
+    #use distances from  environment to get the Distance between them.
+
+    # minnow use april tags to make sure it stays away from sharks and to see if it was caught.
+
+
 
 
 
