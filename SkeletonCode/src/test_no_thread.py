@@ -76,6 +76,41 @@ def find_pose_from_tag(K, detection):
     return p.reshape((3,)), r.reshape((3,))
 
 
+
+# the sides of the frame, in whatever units
+ymax = 100
+xmax = 100
+def wFrame(tuple):
+    # pose[0] gives disatnce in camera Z axis but in our frame X axis
+    # distance is code fro robot to tag. We have rotations to tell us what angel we see it from.
+
+    # find the x and y 
+
+
+    # 1 per side in the middle, so NESW,
+    NESW = [(xmax/2, ymax), (ymax/2, 0), (xmax/2, 0), (xmax, ymax/2)]# list of coord tuples
+#       N    x,y
+#
+#   E       W
+#
+#0,0    S    
+    if (tuple[0].tag_id == 1):# if tag is N, 
+        # x - z distance, y +/- y distance ?
+        print('')
+    elif (tuple[0].tag_id == 2):# if tag is E, 
+        print('')
+    elif (tuple[0].tag_id == 3):# if tag is S 
+        print('')
+    elif (tuple[0].tag_id == 4):# if tag is W, 
+        print('')
+    else:
+        print('NOT A world limit tag')
+
+
+    print('')
+
+
+
 def cammain(vi):
     vid = vi
     #cv2.VideoCapture(0)
@@ -91,7 +126,8 @@ def cammain(vi):
 
         for res in results:
             pose = find_pose_from_tag(K, res)
-            distance = np.linalg.norm(pose[0])
+            # Tag to world, and W to camera
+            distance = np.linalg.norm(pose[0]) # the z distance from tag to robot
             print(res.tag_id)
             print("Distance:", distance)
             
@@ -108,14 +144,16 @@ def cammain(vi):
             Tac = np.linalg.inv(Tca)
             p_cam_a = Tac @ p_cam_c
 
-            
             # append the set of values to list,
             # return the distance and p_cam_a from res.tag_id, so we can get its position
             return_tuple = (res.tag_id, distance, p_cam_a)
+        
             cameraR.append(distance)
             camerap.append(p_cam_a)
             camerap.append(return_tuple)
             
+            # call helper to get distance between sharks   
+            wFrame(return_tuple)
             
             
             print("position:", p_cam_a.T )

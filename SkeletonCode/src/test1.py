@@ -132,6 +132,11 @@ class Streaming(object):
                     
                     Tca = np.vstack((np.hstack((rot, pose[0].reshape((3,1)))), [0, 0, 0, 1]))
                     
+                    #TODO need to calculate TWA to get twc
+                    Twc = np.matmul(Twa,np.linalg.inv(Tca))  # positons in world frame, 4x4 matrix and the 4th 
+                    # column is the pos in the world, with 1 at bottom. Twc[0:3,3] gets x, y, z
+
+
                     #Twa = np.array([pose[0], pose[1]], [0 , 1])
                     Tac = np.linalg.inv(Tca)
                     p_cam_a = Tac @ p_cam_c
@@ -161,13 +166,13 @@ class Streaming(object):
 
 
 
-def getRadii(dt1, dt2):
-    # delta distance = delta t * speed of sound,
-    v = 343 # m/s
+# def getRadii(dt1, dt2):
+#     # delta distance = delta t * speed of sound,
+#     v = 343 # m/s
 
-    distance1 = v * dt1
-    distance2 = v * dt2
-    #return
+#     distance1 = v * dt1
+#     distance2 = v * dt2
+#     #return
 
 
 def circleIntersect(c, r0, r1): # given the disatnce betwwen 2 mice, c, the 2 distances from the time differences, r0 and r1
@@ -230,8 +235,11 @@ if __name__ == '__main__':
     cam1 = Streaming()
     #cam1.__init__(cam1)
     thread1 = threading.Thread(target=cam1.cammain)
-
     print('test ',cameraR)
+
+    # threads for audio streams, shoould return anything but update 2 global variables
+    #threadAudio1 = threading.Thread(target=)
+    #threadAudio2 = threading.Thread(target=)
 
 
 
