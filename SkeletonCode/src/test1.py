@@ -9,7 +9,9 @@ import numpy as np
 import apriltag
 import argparse
 import threading
- 
+import audiodatafunctionized
+#import module
+
 localIP    = ""   # Bind to all network interfaces
 localPort  = 3333 # port on computer, shark
 localPort2 = 2525 # port on computer, shark
@@ -53,33 +55,101 @@ class Streaming(object):
         map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), new_K, DIM, cv2.CV_16SC2)
 
 
-    def find_pose_from_tag(K, detection):
-        tag_size=0.16
-        m_half_size = tag_size / 2
+    # def tag_map_generator(): # got the 4 poses based on what i set my workdXY frame as
+    #     A1 = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])  #East
+    #     B2 = np.array([[0, 0, -1], [-1, 0, 0], [0, 1, 0]])#West
+    #     C3 = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]]) #North
+    #     D0 = np.array([[-1, 0, 0], [0, 0, 1], [0, 1, 0]]) #South
+    #     listofRot = [D0,A1,B2,C3]  #S,E,N,W
+    #     # from tag n to e to s to w starting at index 0. make tag ids in order,next to each other
+    #     max = 100 #side length of square arena/frame
+    #     xValues = [max/2, max/2, max/2, 0]# W to e is +x      # 0,0 was the top left of grid
+    #     yValues = [0, max/2, max, max/2]# n to s is +y axis,
+    #     zValue = 0 # so the z heiht is always the same.
+    #     # aBCD to 1234, for ids 30 to 46
+    #     matrixValue = [2,1,0,3]# have nesw be the order of increasing id numbers  #   [1,2,1,2,3,3,3,0,1,2,1,2,1,2,1,2,3]
+    #     # twaMatrix = []
+    #     twaArrays = []
+    #     # rwa = []
+    #     for i in range(len(xValues)):  # gets a 3x1 matrix for
+    #         # twaMatrix.append([[xValues[i]],[yValues[i]],[zValue]])
+    #         twaArrays.append([xValues[i],yValues[i],zValue])
 
-        marker_center = np.array((0, 0, 0))
-        marker_points = []
-        marker_points.append(marker_center + (-m_half_size, m_half_size, 0))
-        marker_points.append(marker_center + ( m_half_size, m_half_size, 0))
-        marker_points.append(marker_center + ( m_half_size, -m_half_size, 0))
-        marker_points.append(marker_center + (-m_half_size, -m_half_size, 0))
-        _marker_points = np.array(marker_points)
 
-        object_points = _marker_points
-        image_points = detection.corners
+    #     tag_map = []     # Twa = [] # id 30 starts at 0,
+    #     for i in range(len(xValues)):
+    #         forbyfor = []
+    #         rot = listofRot[matrixValue[i]] # gets the rotation 3x3 matrix
+    #         forbyfor.append([rot[0][0], rot[0][1],  rot[0][2], twaArrays[i][0]])
+    #         forbyfor.append([rot[1][0], rot[1][1],  rot[1][2], twaArrays[i][1]])
+    #         forbyfor.append([rot[2][0], rot[2][1],  rot[2][2], twaArrays[i][2]])
+    #         forbyfor.append([0,0,0,1])
+    #         tag_map.append(forbyfor) # was Twa.append
 
-        pnp_ret = cv2.solvePnP(object_points, image_points, K, distCoeffs=None,flags=cv2.SOLVEPNP_IPPE_SQUARE)
+    #     return tag_map
+
+
+
+    # def find_pose_from_tag(K, detection):
+    #     tag_size=0.16
+    #     m_half_size = tag_size / 2
+
+    #     marker_center = np.array((0, 0, 0))
+    #     marker_points = []
+    #     marker_points.append(marker_center + (-m_half_size, m_half_size, 0))
+    #     marker_points.append(marker_center + ( m_half_size, m_half_size, 0))
+    #     marker_points.append(marker_center + ( m_half_size, -m_half_size, 0))
+    #     marker_points.append(marker_center + (-m_half_size, -m_half_size, 0))
+    #     _marker_points = np.array(marker_points)
+
+    #     object_points = _marker_points
+    #     image_points = detection.corners
+
+    #     pnp_ret = cv2.solvePnP(object_points, image_points, K, distCoeffs=None,flags=cv2.SOLVEPNP_IPPE_SQUARE)
         
-        if pnp_ret[0] == False:
-            raise Exception('Error solving PnP')
+    #     if pnp_ret[0] == False:
+    #         raise Exception('Error solving PnP')
 
-        r = pnp_ret[1] #rotation vector
-        p = pnp_ret[2] #translation vector
+    #     r = pnp_ret[1] #rotation vector
+    #     p = pnp_ret[2] #translation vector
 
-        return p.reshape((3,)), r.reshape((3,))
+    #     return p.reshape((3,)), r.reshape((3,))
 
 
     def cammain(self):
+        def tag_map_generator(): # got the 4 poses based on what i set my workdXY frame as
+            A1 = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])  #East
+            B2 = np.array([[0, 0, -1], [-1, 0, 0], [0, 1, 0]])#West
+            C3 = np.array([[1, 0, 0], [0, 0, -1], [0, 1, 0]]) #North
+            D0 = np.array([[-1, 0, 0], [0, 0, 1], [0, 1, 0]]) #South
+            listofRot = [D0,A1,B2,C3]  #S,E,N,W
+            # from tag n to e to s to w starting at index 0. make tag ids in order,next to each other
+            max = 100 #side length of square arena/frame
+            xValues = [max/2, max/2, max/2, 0]# W to e is +x      # 0,0 was the top left of grid
+            yValues = [0, max/2, max, max/2]# n to s is +y axis,
+            zValue = 0 # so the z heiht is always the same.
+            # aBCD to 1234, for ids 30 to 46
+            matrixValue = [2,1,0,3]# have nesw be the order of increasing id numbers  #   [1,2,1,2,3,3,3,0,1,2,1,2,1,2,1,2,3]
+            # twaMatrix = []
+            twaArrays = []
+            # rwa = []
+            for i in range(len(xValues)):  # gets a 3x1 matrix for
+                # twaMatrix.append([[xValues[i]],[yValues[i]],[zValue]])
+                twaArrays.append([xValues[i],yValues[i],zValue])
+
+
+            tag_map = []     # Twa = [] # id 30 starts at 0,
+            for i in range(len(xValues)):
+                forbyfor = []
+                rot = listofRot[matrixValue[i]] # gets the rotation 3x3 matrix
+                forbyfor.append([rot[0][0], rot[0][1],  rot[0][2], twaArrays[i][0]])
+                forbyfor.append([rot[1][0], rot[1][1],  rot[1][2], twaArrays[i][1]])
+                forbyfor.append([rot[2][0], rot[2][1],  rot[2][2], twaArrays[i][2]])
+                forbyfor.append([0,0,0,1])
+                tag_map.append(forbyfor) # was Twa.append
+
+            return tag_map
+    
         def find_pose_from_tag(K, detection):
             tag_size=0.16
             m_half_size = tag_size / 2
@@ -107,6 +177,7 @@ class Streaming(object):
     
         vid = cv2.VideoCapture(0)
         tag_size=0.16 # tag size in meters
+        tag_map = tag_map_generator()
 
         while True:
             try:
@@ -133,8 +204,10 @@ class Streaming(object):
                     Tca = np.vstack((np.hstack((rot, pose[0].reshape((3,1)))), [0, 0, 0, 1]))
                     
                     #TODO need to calculate TWA to get twc
+                    Twa = np.array(tag_map[res.tag_id % 30]) # % the first id in list so start index is 0
                     Twc = np.matmul(Twa,np.linalg.inv(Tca))  # positons in world frame, 4x4 matrix and the 4th 
                     # column is the pos in the world, with 1 at bottom. Twc[0:3,3] gets x, y, z
+                    print("position in world frame y might be z:", Twc )
 
 
                     #Twa = np.array([pose[0], pose[1]], [0 , 1])
@@ -246,9 +319,11 @@ if __name__ == '__main__':
     # we know where april tags are in world so, based on distance from those tags we can locate the robots in the world frame, 
     # then we can get the distance between the 2 sharks, length c.
 
+    # create a module/instance of audio python file ???
+    audiomodule = audiodatafunctionized.triangulation()
 
-
-
+    # should call its "main" method
+    dist1 = audiomodule.startaudio() 
 
 
 
