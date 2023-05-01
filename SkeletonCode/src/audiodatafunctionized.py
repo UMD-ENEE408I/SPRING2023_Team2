@@ -72,28 +72,28 @@ class triangulation(object):
 
 stream1 = triangulation.open_mic1_stream()
 stream2 = triangulation.open_mic2_stream()
-stream = True
-while stream:
-    stream1threshold = False
-    stream2threshold = False
+#stream = True
+#while stream:
+stream1threshold = False
+stream2threshold = False
 
-    while  not stream1threshold  or not stream2threshold:
-        data1 = triangulation.data(stream1)
-        if not stream1threshold:
-            M1filt = triangulation.filtered(cutoff,cutoff2,RATE,data1[0],data1[1],MIC1)
-            if(M1filt[3] > 40):
-                stream1threshold = True
-        data2 = triangulation.data(stream2)
-        if not stream2threshold:
-            M2filt = triangulation.filtered(cutoff,cutoff2,RATE,data2[0],data2[1],MIC2)
-            if(M2filt[3] > 40):
-                stream2threshold = True
+while  not stream1threshold  or not stream2threshold:
+    data1 = triangulation.data(stream1)
+    if not stream1threshold:
+        M1filt = triangulation.filtered(cutoff,cutoff2,RATE,data1[0],data1[1],MIC1)
+        if(M1filt[3] > 40):
+            stream1threshold = True
+    data2 = triangulation.data(stream2)
+    if not stream2threshold:
+        M2filt = triangulation.filtered(cutoff,cutoff2,RATE,data2[0],data2[1],MIC2)
+        if(M2filt[3] > 40):
+            stream2threshold = True
 
-    timediff = abs(M1filt[2]- (M2filt[2]-.001))
-    print(timediff)
-    dist1 = 343*M1filt[2]
-    dist2 = 343*M2filt[2]
-    time.sleep(3)
+timediff = abs(M1filt[2]- (M2filt[2]-.001))
+print(timediff)
+dist1 = 343*M1filt[2]
+dist2 = 343*M2filt[2]
+time.sleep(3)
 # stop Recording
 stream1.stop_stream()
 stream2.stop_stream()
