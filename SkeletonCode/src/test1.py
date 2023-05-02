@@ -25,6 +25,8 @@ distance2 = 0 # distance from shark2 to minnow
 cameraR = []
 camerap = []
 #tag_size=0.16
+global xcord
+global ycord
 
 class Streaming(object):
     def __init__(self):
@@ -116,7 +118,7 @@ class Streaming(object):
     #     return p.reshape((3,)), r.reshape((3,))
 
 
-    def cammain(self):
+    def cammain(self,vidnum,cordlist,tagid):
         def tag_map_generator(): # got the 4 poses based on what i set my workdXY frame as
             A1 = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])  #East
             B2 = np.array([[0, 0, -1], [-1, 0, 0], [0, 1, 0]])#West
@@ -175,7 +177,7 @@ class Streaming(object):
 
             return p.reshape((3,)), r.reshape((3,))
     
-        vid = cv2.VideoCapture(0)
+        vid = cv2.VideoCapture(vidnum)
         tag_size=0.16 # tag size in meters
         tag_map = tag_map_generator()
 
@@ -207,8 +209,16 @@ class Streaming(object):
                     Twa = np.array(tag_map[res.tag_id % 30]) # % the first id in list so start index is 0
                     Twc = np.matmul(Twa,np.linalg.inv(Tca))  # positons in world frame, 4x4 matrix and the 4th 
                     # column is the pos in the world, with 1 at bottom. Twc[0:3,3] gets x, y, z
-                    print("position in world frame y might be z:", Twc )
 
+                    position = Twc[0:2:1, 3] # Last column, neglect z coord
+                    print("position , hopefully x and y:", position )
+                    print("position in world frame y might be z:", Twc )
+                    xcord= position[0]
+                    ycord= position[1]
+                    #cordlist is a pointer/reference. 
+                    cordlist[0] = xcord
+                    cordlist[1] = ycord
+                    tagid = res.tag_id
 
                     #Twa = np.array([pose[0], pose[1]], [0 , 1])
                     Tac = np.linalg.inv(Tca)
@@ -220,6 +230,7 @@ class Streaming(object):
                     print("position:", p_cam_a.T )
                     distance = "distance"
                     p_cam_a = "p_cam_a"
+                    #return xcord, ycord
                     #distance = "/home/luke/Desktop/autonomous Robots/apirltag/distance"
                     #p_cam_a = "/home/luke/Desktop/autonomous Robots/apirltag/p_cam_a"
                     np.save(distance, distance)
@@ -296,7 +307,7 @@ def localize(c,r0,r1): # given the disatnce betwwen 2 mice, c, the 2 distances f
     y2 = y0 + a*(y1-y0)/d   
     x3 = x2 + h*(y1-y0)/d       # also x3=x2-h*(y1-y0)/d
     y3 = y2 - h*(x1-x0)/d 
-    return (x3,y3) # get distplacement values
+    return (x3, y3) # get distplacement values
 
 
 
@@ -307,8 +318,45 @@ if __name__ == '__main__':
 
     cam1 = Streaming()
     #cam1.__init__(cam1)
-    thread1 = threading.Thread(target=cam1.cammain)
+    xcord = 0
+    ycord = 0
+    x2cord = 0
+    y2cord = 0
+    max = 100 #side length of square arena/frame
+    xValues = [max/2, max/2, max/2, 0]# W to e is +x      # 0,0 was the top left of grid
+    yValues = [0, max/2, max, max/2]
+    
+    #init 3 cameras and the variables to get last side length of triangle
+    cordlist = np.zeros((2,)) # vector of length 2
+    cordlist1 = np.zeros((2,)) # vector of length 2
+    tagid0 = 0
+    tagid1 = 0
+    #sharks
+    thread0 = threading.Thread(target=lambda: cam1.cammain(0, cordlist, tagid0))
+    thread1 = threading.Thread(target=lambda: cam1.cammain(1, cordlist1, tagid1))
+
+    # minnow thread
+    thread2 = threading.Thread(target=lambda: cam1.cammain(2))
+
+    if(tagid0 == tagid1):
+        side_length = cordlist[0] - cordlist1[0]
+    else:
+        print('NOT LOOKING AT THE SAME TAG') # wouldnt work at all
+
+
+    # when exiting ctrl C multiple timmes
+    thread0.start()
+    thread1.start()
+    thread2.start()
+
+
+    # i want to get x and y cord from cammain and compare them here.
     print('test ',cameraR)
+
+
+
+
+
 
     # threads for audio streams, shoould return anything but update 2 global variables
     #threadAudio1 = threading.Thread(target=)
@@ -322,8 +370,8 @@ if __name__ == '__main__':
     # create a module/instance of audio python file ???
     audiomodule = audiodatafunctionized.triangulation()
 
-    # should call its "main" method
-    dist1 = audiomodule.startaudio() 
+    # should call its "main" method. loops until it is ready to finish
+    dist1, dist2 = audiomodule.startaudio() 
 
 
 
