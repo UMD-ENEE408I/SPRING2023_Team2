@@ -55,21 +55,21 @@ class triangulation(object):
         n = numpydata.shape[0]
         return numpydata,n
 
-    def filtered(cutoff,cutoff2,RATE,numpydata,n,mic):
+    def filtered(cutoff,cutoff2,RATE,numpydata,n,mic,timestart):
         b, a = signal.butter(2,[cutoff, cutoff2],'bandpass', analog = False, fs = RATE)
         yfilt = signal.lfilter(b,a,numpydata)
         yf = np.fft.rfft(yfilt)
         fstep = RATE / n
         freqs = np.arange(yf.shape[0]) * fstep
         yff = np.abs(yf)*2/(11000*CHUNK)
-        db = 160+25 *log10(np.mean(np.abs(yff/4)))
+        db = 150+25 *log10(np.mean(np.abs(yff/4)))
         #print(db)
-        tm = time.time()-1682440230.7503483
+        tm = time.time()-timestart
         if (db > 40):
             print(f"Mic: {mic}",f" dB: {db}", f"time: {tm}")
-            #time.sleep(.5) 
         return yff,freqs, tm, db
 
+    #def startaudio():
 stream1 = triangulation.open_mic1_stream()
 stream2 = triangulation.open_mic2_stream()
 stream = True
@@ -78,14 +78,17 @@ while stream:
     stream2threshold = False
 
     while  not stream1threshold  or not stream2threshold:
+        timestart1 = time.time()
+
         data1 = triangulation.data(stream1)
         if not stream1threshold:
-            M1filt = triangulation.filtered(cutoff,cutoff2,RATE,data1[0],data1[1],MIC1)
+            M1filt = triangulation.filtered(cutoff,cutoff2,RATE,data1[0],data1[1],MIC1,timestart1)
             if(M1filt[3] > 40):
                 stream1threshold = True
+        timestart2 = time.time()
         data2 = triangulation.data(stream2)
         if not stream2threshold:
-            M2filt = triangulation.filtered(cutoff,cutoff2,RATE,data2[0],data2[1],MIC2)
+            M2filt = triangulation.filtered(cutoff,cutoff2,RATE,data2[0],data2[1],MIC2,timestart2)
             if(M2filt[3] > 40):
                 stream2threshold = True
 
@@ -94,9 +97,10 @@ while stream:
     dist1 = 343*M1filt[2]
     dist2 = 343*M2filt[2]
     time.sleep(3)
-# stop Recording
+    # stop Recording
 stream1.stop_stream()
 stream2.stop_stream()
 stream1.close()
 stream2.close()
 audio.terminate()
+     #  return dist1, dist2
