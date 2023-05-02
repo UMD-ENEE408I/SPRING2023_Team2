@@ -6,7 +6,7 @@ import math
 from pupil_apriltags import Detector
 import cv2
 import numpy as np
-import apriltag
+#import apriltag
 import argparse
 import threading
 import audiodatafunctionized
@@ -118,7 +118,7 @@ class Streaming(object):
     #     return p.reshape((3,)), r.reshape((3,))
 
 
-    def cammain(self,vidnum,cordlist,tagid):
+    def cammain(self,vidnum,cordlist,tagid, stop):
         def tag_map_generator(): # got the 4 poses based on what i set my workdXY frame as
             A1 = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])  #East
             B2 = np.array([[0, 0, -1], [-1, 0, 0], [0, 1, 0]])#West
@@ -184,17 +184,23 @@ class Streaming(object):
         while True:
             try:
                 ret, img = vid.read()
-                undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT) 
+                undistorted_img = cv2.remap(img, self.map1, self.map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT) 
                 gray = cv2.cvtColor(undistorted_img, cv2.COLOR_BGR2GRAY)
                 gray.astype(np.uint8)
 
-                results = at_detector.detect(gray, estimate_tag_pose=False)
+                results = self.at_detector.detect(gray, estimate_tag_pose=False)
 
                 for res in results:
                     pose = find_pose_from_tag(K, res)
                     distance = np.linalg.norm(pose[0])
                     print(res.tag_id)
                     print("Distance:", distance)
+
+                    if res.tag.id == 0 or res.tag.id == 1 or res.tag.id == 2 or res.tag.id == 3 or res.tag.id == 4 or res.tag.id == 5 or res.tag.id == 6 or res.tag.id == 7 and distance < 0.1:
+                        stop = 1 #stops and make 90-180 turn
+                    if res.tag.id == 8:
+                        stop = 2 #shark tagged minnow
+
                     
                     rot, jaco = cv2.Rodrigues(pose[1], pose[1])
 
@@ -270,7 +276,7 @@ def circleIntersect(c, r0, r1): # given the disatnce betwwen 2 mice, c, the 2 di
     y2 = y0 + a*(y1-y0)/d   
     x3 = x2 + h*(y1-y0)/d       # also x3=x2-h*(y1-y0)/d
     y3 = y2 - h*(x1-x0)/d 
-    return (x3,y3) # get distplacement values
+    return (x3, y3) # get distplacement values
 
 
 def getAngles(c, a, b): # a and b are r1 and r0, the 2 radii distances.
@@ -331,9 +337,11 @@ if __name__ == '__main__':
     cordlist1 = np.zeros((2,)) # vector of length 2
     tagid0 = 0
     tagid1 = 0
+    stop1 = 0
+    stop2 = 0
     #sharks
-    thread0 = threading.Thread(target=lambda: cam1.cammain(0, cordlist, tagid0))
-    thread1 = threading.Thread(target=lambda: cam1.cammain(1, cordlist1, tagid1))
+    thread0 = threading.Thread(target=lambda: cam1.cammain(0, cordlist, tagid0,stop1))
+    thread1 = threading.Thread(target=lambda: cam1.cammain(1, cordlist1, tagid1,stop2))
 
     # minnow thread
     thread2 = threading.Thread(target=lambda: cam1.cammain(2))
@@ -343,7 +351,10 @@ if __name__ == '__main__':
     else:
         print('NOT LOOKING AT THE SAME TAG') # wouldnt work at all
 
-
+    if(stop1 == 1 or stop1 == 1):
+        print("Turn!")
+    if(stop1 == 2 or stop2 == 2):
+        print("Tagged!")
     # when exiting ctrl C multiple timmes
     thread0.start()
     thread1.start()
@@ -352,9 +363,6 @@ if __name__ == '__main__':
 
     # i want to get x and y cord from cammain and compare them here.
     print('test ',cameraR)
-
-
-
 
 
 
@@ -371,8 +379,13 @@ if __name__ == '__main__':
     audiomodule = audiodatafunctionized.triangulation()
 
     # should call its "main" method. loops until it is ready to finish
-    dist1, dist2 = audiomodule.startaudio() 
+    dist1, dist2, timediff = audiomodule.startaudio() 
 
+
+    # should get the source x and y of the minnnow. dont use them though
+    (source_x, source_y) = circleIntersect(side_length, dist1, dist2)  # dists from audio, sideelength from camera
+    # get 3 angles for the triangle
+    angleA, angleB, angleC = getAngles(side_length, dist1, dist2)
 
 
     # Creating initial default packets to send to the mouse
@@ -400,9 +413,9 @@ if __name__ == '__main__':
         print('Message received: {}'.format(message3))
 
         c = 10  #placeholder value,  get distance between the 2 sharks
-        getRadii(message2, message) # update radii, assumes messages are just the values/times
-        (source_x, source_y) = circleIntersect(distance1, distance2)  # get the intersect point, with the 2 updated radii
-        angleA, angleB, angleC = getAngles(c, distance1, distance2)
+        #getRadii(message2, message) # update radii, assumes messages are just the values/times
+        #(source_x, source_y) = circleIntersect(distance1, distance2)  # get the intersect point, with the 2 updated radii
+        #angleA, angleB, angleC = getAngles(c, distance1, distance2)
 
         # angle A and B are the theta values we want to pass to the 2 sharks
         # the distances for the sharks are the radii, distyance 1 and 2.

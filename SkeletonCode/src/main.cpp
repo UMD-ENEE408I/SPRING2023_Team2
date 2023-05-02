@@ -439,7 +439,7 @@ void loop() { //main method
   
     // Read IMU and update estimate of heading
     // positive is counter clockwise
-    float omega;
+    float omega; //actual reading from sensor
     read_imu(omega); // Could be expanded to read more things
     omega -= bias_omega; // Remove the constant bias measured in the beginning--------------------------to change theta just adjust omega
     theta = theta + omega * dt;
@@ -520,6 +520,8 @@ void loop() { //main method
     if((pos_left + pos_right)/2 >= target_distance ){ //target_v   if average distance is greater than or = to the set distance
         // at desired distance. So we either call it again or 
         Serial.print("Got to distance ");
+        set_motors_pwm(0,0);// got to the desired distance
+
 
         //check if we are close enough to catch it., if yes then we're done , if no we continue /move on
 
@@ -529,7 +531,7 @@ void loop() { //main method
     // if( the robot is within catch distance ){
     //    end everything
     // } 
-
+  //make this the else case
     set_motors_pwm(left_pwm, right_pwm);
 
     // Serial.println();
