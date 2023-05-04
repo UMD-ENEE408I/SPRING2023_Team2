@@ -416,9 +416,13 @@ if __name__ == '__main__':
         if(stop1 == 1 or stop2 == 1): # need to get abck to frame/arean case
             print("Turn!")
             turn = 1
+        else:
+            turn = 0
         if(stop1 == 2 or stop2 == 2): # end case
             print("Tagged!")
             tagged = 1
+        else:
+            tagged = 0
 
 
         # should get the source x and y of the minnnow. dont use them though
