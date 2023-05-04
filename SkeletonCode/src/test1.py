@@ -445,12 +445,12 @@ if __name__ == '__main__':
 
         # send packets
         UDPServerSocket.sendto(packet_shark1, ip_address) # 1st robot
-        UDPServerSocket2.sendto(packet_shark2, ip_address) #2nd robot
+        UDPServerSocket2.sendto(packet_shark2, ip_address2) #2nd robot
 
 
         # either need delay/condition to send movement to minnow. Or make it constant or move and stop.
         #send packet to minnow
-        UDPServerSocket3.sendto(packet_minnow, ip_address)# 3rd robot
+        UDPServerSocket3.sendto(packet_minnow, ip_address3)# 3rd robot
 
 
 
