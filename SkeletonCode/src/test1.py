@@ -196,9 +196,9 @@ class Streaming(object):
                     print(res.tag_id)
                     print("Distance:", distance)
 
-                    if res.tag_id == 0 or res.tag_id == 1 or res.tag_id == 2 or res.tag_id == 3 or res.tag_id == 4 or res.tag_id == 5 or res.tag_id == 6 or res.tag_id == 7 and distance < 0.1:
+                    if res.tag_id == 0 or res.tag_id == 1 or res.tag_id == 2 or res.tag_id == 3 or res.tag_id == 8 or res.tag_id == 5 or res.tag_id == 6 or res.tag_id == 7 and distance < 0.1:
                         stop = 1 #stops and make 90-180 turn
-                    if res.tag_id == 8:
+                    if res.tag_id == 4:
                         stop = 2 #shark tagged minnow
 
                     
@@ -212,7 +212,7 @@ class Streaming(object):
                     Tca = np.vstack((np.hstack((rot, pose[0].reshape((3,1)))), [0, 0, 0, 1]))
                     
                     #TODO need to calculate TWA to get twc
-                    Twa = np.array(tag_map[res.tag_id % 30]) # % the first id in list so start index is 0
+                    Twa = np.array(tag_map[res.tag_id]) # %0 the first id in list so start index is 0
                     Twc = np.matmul(Twa,np.linalg.inv(Tca))  # positons in world frame, 4x4 matrix and the 4th 
                     # column is the pos in the world, with 1 at bottom. Twc[0:3,3] gets x, y, z
 
