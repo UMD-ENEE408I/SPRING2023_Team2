@@ -345,13 +345,13 @@ if __name__ == '__main__':
     thread0 = threading.Thread(target=lambda: cam1.cammain(0, cordlist, tagid0,stop1))
     thread1 = threading.Thread(target=lambda: cam1.cammain(1, cordlist1, tagid1,stop2))
 
-    # minnow thread
-    thread2 = threading.Thread(target=lambda: cam1.cammain(2))
+    # minnow thread, not using rn
+    ###thread2 = threading.Thread(target=lambda: cam1.cammain(2))
 
     # when exiting ctrl C multiple timmes
     thread0.start()
     thread1.start()
-    thread2.start()
+    #   not using thread2.start()
 
 
     # i want to get x and y cord from cammain and compare them here.
