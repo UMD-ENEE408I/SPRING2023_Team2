@@ -322,9 +322,9 @@ void loop() { //main method
   float last_t = -target_period_ms / 1000.0; // Offset by expected looptime to avoid divide by zero
 
   // Our array for the input we will recieve
-  float outpy[2];
-  float oldpythonValues[2];
-
+  float outpy[3];
+  float oldpythonValues[3];
+  bool resetEncoders = false;
 
   while (true) {//LOOPS FOR INFINITY, where we do everything
     //version code for the shark versus the minnow
@@ -332,10 +332,7 @@ void loop() { //main method
     // Use cameras to make sure we are in world frame/ see if we are close enough to "catch the minnow".
     // Use camera to get distance from betweent the sharks.
 
-    //each version will also just call the apackets, once for its own port.
-
-
-    //1st thing in loop
+    //1st thing in main loop
     if(connected){
       // Send a packet
       // udp.beginPacket(udpAddress,udpPort);// inbetween is what we are sending to laptop/.py
@@ -349,71 +346,69 @@ void loop() { //main method
       {
         udp.read((char*)outpy, sizeof(outpy)); 
         udp.flush();
-        Serial.printf("outpy is %f %f\n", outpy[0], outpy[1]);
-        //if vlaues are different switch them,
-        if(outpy[0] != oldpythonValues[0]){
+        Serial.printf("outpy is %f %f %f %f\n", outpy[0], outpy[1], outpy[2], outpy[3]);
+        //if values are different switch them,
+        if(outpy[0] != oldpythonValues[0]){// if the distance value is different than previous one,
           oldpythonValues[0] = outpy[0];
           oldpythonValues[1] = outpy[1];
+          resetEncoders = true; // if the values for heading and distance are different, we need to reset encoder
+        } else{ // if desired distance hasnt changed, dont reset encoders.  based on if the call distances arent updated continuously
+          resetEncoders = false;
         }
       }
     }
 
     //print the output we are recieving
-    Serial.println(outpy[0]);
-    Serial.print(" ");
-    Serial.println(outpy[1]);
+    Serial.println("distance ",outpy[0]);
+    Serial.println("heading/angle ",outpy[1]);
+    Serial.println("need to turn is a 1:  ",outpy[2]);
+    Serial.println("tagged minnow is a 1: ",outpy[3]);
     target_distance = outpy[0]; //new direction/distance 
     target_theta = outpy[1]; //new theta/angle
+    float rotate_mice = outpy[2]; //new direction/distance 
+    float minnow_tagged = outpy[3];
 
 
+    float start_listening = (float)micros() / 1000000.0;
 
-  // after getting packets from python file.
+    //use mic to start listening.
 
-
-
-  //code to start reading/recording input here.--------------------------------------------------
-  float start_listening = (float)micros() / 1000000.0;
-
-  //use mic to start listening.
-
-
-
-  float stop_listening = ((float)micros()) / 1000000.0 - start_listening; // should be elapsed time, delta t
-  //-----------------------------------------------------------------------------------------------------------------
-  //send the packet with the data, send sound file and the time it took
-  if(connected){
-      udp.beginPacket(udpAddress, udpPort);// inbetween is what we are sending to laptop/.py
-      udp.printf("Seconds since boot: %lu", stop_listening);
-      udp.write((uint8_t*)&stop_listening, sizeof(stop_listening));// would sent the 4 bits to the python file. udp 8-bit
-      //what we want to send to the python file is the sound that we read in, and the elapsed time
-      udp.endPacket();
-  }
+    float stop_listening = ((float)micros()) / 1000000.0 - start_listening; // should be elapsed time, delta t
+    //-----------------------------------------------------------------------------------------------------------------
+    //send the packet with the data, send sound file and the time it took
+    if(connected){
+        udp.beginPacket(udpAddress, udpPort);// inbetween is what we are sending to laptop/.py
+        udp.printf("Seconds since boot: %lu", stop_listening);
+        udp.write((uint8_t*)&stop_listening, sizeof(stop_listening));// would sent the 4 bits to the python file. udp 8-bit
+        //what we want to send to the python file is the sound that we read in, and the elapsed time
+        udp.endPacket();
+    }
 
   // adding a wait here for the updated values? wait since the movememnt is based on this point
   //wait until the values are returned since if we move those values wouldnt be useful
   //Or,, does it already wait since it gstops at target distacne/heading
-  bool waiting = true;
-    while(waiting){
-      set_motors_pwm(0, 0);//dont move
-      if(connected){ // continuous check if we get a packet
-        //Checks for packet and obtains its contents.(read in values here)
-        int packetSize = udp.parsePacket();
-        if(packetSize >= sizeof(float)){
-          udp.read((char*)outpy, sizeof(outpy)); 
-          udp.flush();
-          Serial.printf("outpy is %f %f\n", outpy[0], outpy[1]);
-          //if vlaues are different switch them
-          if(outpy[0] != oldpythonValues[0]){
-            oldpythonValues[0] = outpy[0];
-            oldpythonValues[1] = outpy[1];
+    bool waiting = true;
+      while(waiting){
+        set_motors_pwm(0, 0);//dont move
+        if(connected){ // continuous check if we get a packet
+          //Checks for packet and obtains its contents.(read in values here)
+          int packetSize = udp.parsePacket();
+          if(packetSize >= sizeof(float)){
+            udp.read((char*)outpy, sizeof(outpy)); 
+            udp.flush();
+            Serial.printf("outpy is %f %f %f %f\n", outpy[0], outpy[1], outpy[2], outpy[3]);
+            //if values are different switch them
+            if(outpy[0] != oldpythonValues[0]){
+              oldpythonValues[0] = outpy[0];
+              oldpythonValues[1] = outpy[1];
+            }
+            waiting = false; // we had read a packet, so we stop waiting
           }
-          waiting = false; // we had read a packet, so we stop waiting
         }
-      }
-    } // end of waiting while loop
-    //set_motors_pwm(left_pwm, right_pwm);//reset it to last value/speeds
+      } // end of waiting while loop
+      //set_motors_pwm(left_pwm, right_pwm);//reset it to last value/speeds
 
-    //now we can move to target.
+      //now we can move to target.
 
 
 
@@ -431,10 +426,18 @@ void loop() { //main method
 
     // Get the distances the wheels have traveled in meters
     // positive is forward
-    float pos_left  =  (float)enc1.read() * METERS_PER_TICK;
-    float pos_right = -(float)enc2.read() * METERS_PER_TICK; // Take negative because right counts upwards when rotating backwards
+    float pos_left  =  0;
+    float pos_right = 0;
+    if (resetEncoders){// if true, we need to read and reset --------------------------------------------------
+      pos_left  =  (float)enc1.readAndReset() * METERS_PER_TICK;
+      pos_right = -(float)enc2.readAndReset() * METERS_PER_TICK; // Take negative because right counts upwards when rotating backwards
+      // ^ is the distance traveled according to encoders
+    } else{ // if we dont have new distance/heading we keep encoder values and just update
+      pos_left  =  (float)enc1.read() * METERS_PER_TICK;
+      pos_right = -(float)enc2.read() * METERS_PER_TICK; // Take negative because right counts upwards when rotating backwards
     // ^ is the distance traveled according to encoders
-
+    }
+   
 
   
     // Read IMU and update estimate of heading
@@ -479,7 +482,11 @@ void loop() { //main method
   
     // Calculate target motor speeds from target forward speed and target heading
     // Could also include target path length traveled and target angular velocity
-    float error_theta_z = target_theta - theta;
+    float error_theta_z = target_theta - theta; //----------------------
+
+    if(rotate_mice == 1){ // if we need to go back to arena/frame--------------------------------
+      error_theta_z = 180 - theta;
+    }
     float requested_v = target_v;
     float requested_w = ktheta * error_theta_z;
 
@@ -514,41 +521,43 @@ void loop() { //main method
     // Serial.print(" r voltage " ); Serial.print(right_voltage);
 
 
-
+    //if the audio is continuous then the heading and distance is always updating as well. 
+    // Then checking the encoder to see if it == desired distance doesnt work. we'd based it solely on the aprilt tag detection from the 
+    // robot/minnow.
+    if(minnow_tagged == 1){ //reached target distance, check if we hit it.
+      Serial.print("caught minnow ");
+      set_motors_pwm(0,0);// got to the desired distance
+      break;
+    }else{
+      set_motors_pwm(left_pwm, right_pwm);
+    }
 
     //ADDED SINCE WE are either sending in speed, or sending in distance. 
-    if((pos_left + pos_right)/2 >= target_distance ){ //target_v   if average distance is greater than or = to the set distance
-        // at desired distance. So we either call it again or 
-        Serial.print("Got to distance ");
-        set_motors_pwm(0,0);// got to the desired distance
+    // if((pos_left + pos_right)/2 >= target_distance ){ //reached target distance, check if we hit it.
+    //     Serial.print("Got to distance ");
 
+    //     //check if we are close enough to catch it., if yes then we're done 
+    //     if(minnow_tagged == 1){
+    //       set_motors_pwm(0, 0);// got to the desired distance
+    //       break; //should break out of the continuous while loop
+    //     }
+    //     else{ //else case we just call/continue and see if the code updates the distance
+    //       set_motors_pwm(left_pwm, right_pwm);
+    //     }
+        
+    // } else{ // normal case
+    //       set_motors_pwm(left_pwm, right_pwm);
 
-        //check if we are close enough to catch it., if yes then we're done , if no we continue /move on
-
-
-        break; //see if breaking works
-    }
-    // if( the robot is within catch distance ){
-    //    end everything
-    // } 
-  //make this the else case
-    set_motors_pwm(left_pwm, right_pwm);
+    // }
+    //make this the else case
+    //set_motors_pwm(left_pwm, right_pwm);
 
     // Serial.println();
     delay(target_period_ms);
   } // end of while loop,
 
-  //if not using 2 loop method, use conditionals to handle the minnow turning into a minnow case
-
-
-
-
-  // when its 2 sharks and 1 minnow case
-  while(true){ // can have the code o robots break out of 1st loop and we can just run in 2nd loop, or we can put everything in1 loop.
-    // if 2 loop way, this loop will be very close to orignal loop
-  }
-
-
+ //broke out of main loop, meaning we are done/caught the minnow
+  Serial.print("Finished the main loop. Sharks won the game ");
 
 
 }

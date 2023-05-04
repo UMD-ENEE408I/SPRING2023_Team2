@@ -191,14 +191,14 @@ class Streaming(object):
                 results = self.at_detector.detect(gray, estimate_tag_pose=False)
 
                 for res in results:
-                    pose = find_pose_from_tag(K, res)
+                    pose = find_pose_from_tag(self.K, res) # should work with self.K,
                     distance = np.linalg.norm(pose[0])
                     print(res.tag_id)
                     print("Distance:", distance)
 
-                    if res.tag.id == 0 or res.tag.id == 1 or res.tag.id == 2 or res.tag.id == 3 or res.tag.id == 4 or res.tag.id == 5 or res.tag.id == 6 or res.tag.id == 7 and distance < 0.1:
+                    if res.tag_id == 0 or res.tag_id == 1 or res.tag_id == 2 or res.tag_id == 3 or res.tag_id == 4 or res.tag_id == 5 or res.tag_id == 6 or res.tag_id == 7 and distance < 0.1:
                         stop = 1 #stops and make 90-180 turn
-                    if res.tag.id == 8:
+                    if res.tag_id == 8:
                         stop = 2 #shark tagged minnow
 
                     
@@ -321,7 +321,8 @@ def localize(c,r0,r1): # given the disatnce betwwen 2 mice, c, the 2 distances f
 # main loop
 if __name__ == '__main__':
 
-
+    turn = 0
+    tagged = 0
     cam1 = Streaming()
     #cam1.__init__(cam1)
     xcord = 0
@@ -339,6 +340,7 @@ if __name__ == '__main__':
     tagid1 = 0
     stop1 = 0
     stop2 = 0
+
     #sharks
     thread0 = threading.Thread(target=lambda: cam1.cammain(0, cordlist, tagid0,stop1))
     thread1 = threading.Thread(target=lambda: cam1.cammain(1, cordlist1, tagid1,stop2))
@@ -346,15 +348,6 @@ if __name__ == '__main__':
     # minnow thread
     thread2 = threading.Thread(target=lambda: cam1.cammain(2))
 
-    if(tagid0 == tagid1):
-        side_length = cordlist[0] - cordlist1[0]
-    else:
-        print('NOT LOOKING AT THE SAME TAG') # wouldnt work at all
-
-    if(stop1 == 1 or stop1 == 1):
-        print("Turn!")
-    if(stop1 == 2 or stop2 == 2):
-        print("Tagged!")
     # when exiting ctrl C multiple timmes
     thread0.start()
     thread1.start()
@@ -362,8 +355,10 @@ if __name__ == '__main__':
 
 
     # i want to get x and y cord from cammain and compare them here.
-    print('test ',cameraR)
+    #print('test ',cameraR)
+    print('after camera threads start')
 
+    audiomodule = audiodatafunctionized.triangulation()
 
 
     # threads for audio streams, shoould return anything but update 2 global variables
@@ -376,22 +371,13 @@ if __name__ == '__main__':
     # then we can get the distance between the 2 sharks, length c.
 
     # create a module/instance of audio python file ???
-    audiomodule = audiodatafunctionized.triangulation()
-
-    # should call its "main" method. loops until it is ready to finish
-    dist1, dist2, timediff = audiomodule.startaudio() 
-
-
-    # should get the source x and y of the minnnow. dont use them though
-    (source_x, source_y) = circleIntersect(side_length, dist1, dist2)  # dists from audio, sideelength from camera
-    # get 3 angles for the triangle
-    angleA, angleB, angleC = getAngles(side_length, dist1, dist2)
+    
 
 
     # Creating initial default packets to send to the mouse
-    packet_shark1 = struct.pack("ff", 0, 0)
-    packet_shark2 = struct.pack("ff", 0, 0)
-    packet_minnow = struct.pack("ff", 0, 0)
+    packet_shark1 = struct.pack("ffff", 0, 0,turn,tagged)
+    packet_shark2 = struct.pack("ffff", 0, 0,turn,tagged)
+    packet_minnow = struct.pack("ffff", 0, 0,turn,tagged)
 
     UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
     UDPServerSocket.bind((localIP, localPort))
@@ -413,9 +399,34 @@ if __name__ == '__main__':
         print('Message received: {}'.format(message3))
 
         c = 10  #placeholder value,  get distance between the 2 sharks
-        #getRadii(message2, message) # update radii, assumes messages are just the values/times
-        #(source_x, source_y) = circleIntersect(distance1, distance2)  # get the intersect point, with the 2 updated radii
-        #angleA, angleB, angleC = getAngles(c, distance1, distance2)
+        
+        # every loopc create audio object adn call the main loop, to do 1 loop/1 date set
+        #audiomodule = audiodatafunctionized.triangulation()
+
+        # should call its "main" method. loops until it is ready to finish
+        dist1, dist2, timediff = audiomodule.startaudio() 
+
+
+        # get last side length, and get values for if we need to turn or tagged
+        if(tagid0 == tagid1):
+            side_length = cordlist[0] - cordlist1[0]
+        else:
+            print('NOT LOOKING AT THE SAME TAG') # wouldnt work at all
+
+        if(stop1 == 1 or stop2 == 1): # need to get abck to frame/arean case
+            print("Turn!")
+            turn = 1
+        if(stop1 == 2 or stop2 == 2): # end case
+            print("Tagged!")
+            tagged = 1
+
+
+        # should get the source x and y of the minnnow. dont use them though
+        (source_x, source_y) = circleIntersect(side_length, dist1, dist2)  # dists from audio, sideelength from camera
+        # get 3 angles for the triangle
+        angleA, angleB, angleC = getAngles(side_length, dist1, dist2)
+
+
 
         # angle A and B are the theta values we want to pass to the 2 sharks
         # the distances for the sharks are the radii, distyance 1 and 2.
@@ -428,9 +439,9 @@ if __name__ == '__main__':
         # call sound lcoalization method, returns 2 sets of distances and thetas, or just 1 set.
 
         # set up the packets again
-        packet_shark1 = struct.pack("ff", distance1, angleA)
-        packet_shark2 = struct.pack("ff", distance2, angleB)
-        packet_minnow = struct.pack("ff", distance, angleC)
+        packet_shark1 = struct.pack("ffff", distance1, angleA, turn, tagged)
+        packet_shark2 = struct.pack("ffff", distance2, angleB, turn, tagged)
+        packet_minnow = struct.pack("ffff", distance, angleC, turn, tagged)
 
         # send packets
         UDPServerSocket.sendto(packet_shark1, ip_address) # 1st robot
@@ -449,21 +460,12 @@ if __name__ == '__main__':
         # what we need to produce/output: distance we want each mice to move, the heading/theta they need to rotate.
 
 
-# use cameras to get distacne C between the 2 robots.
-
-
-
 
 
 # for localization you need the x and y distances/difference from each other. Also need distance to the source, which is from signal/mic.
 # the x and y is probably from camera/world frame.
 
 # so 2 mice get their location from apriltag. Then you get the x and y parts so you compare those to each other.
-
-
-
-
-
 
 #use threading to listen/read in the microphone.
 #import threading
