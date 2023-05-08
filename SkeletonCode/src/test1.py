@@ -31,7 +31,7 @@ global ycord
 class Streaming(object):
     def __init__(self):
         #print("Initializing Camera")
-        at_detector = Detector(
+        self.at_detector = Detector(
             families="tag36h11",
             nthreads=1,
             quad_decimate=1.0,
@@ -44,17 +44,20 @@ class Streaming(object):
         #output_K="/home/luke/Desktop/autonomous Robots/camera calibration/output_K.npy"
         #output_D="/home/luke/Desktop/autonomous Robots/camera calibration/output_D.npy"
         output_DIM = "output_DIM.npy"
-        output_K="output_K.npy"
+        output_K="output_K.npy" 
         output_D="output_D.npy"
         #  C:\Users\gavin\Documents\Spring 2023\enee408I\ENEE408I_Notes_Examples-main\mouse_heltec_examples_platformio
-
+        # output_DIM = "C:\Users\gavin\Documents\Spring 2023\enee408I\ENEE408I_Notes_Examples-main\mouse_heltec_examples_platformio\SkeletonCode\output_DIM.npy"
+        # output_K="C:\Users\gavin\Documents\Spring 2023\enee408I\ENEE408I_Notes_Examples-main\mouse_heltec_examples_platformio\SkeletonCode\output_K.npy"
+        # output_D="C:\Users\gavin\Documents\Spring 2023\enee408I\ENEE408I_Notes_Examples-main\mouse_heltec_examples_platformio\SkeletonCode\output_D.npy"
+        
         DIM = np.load(output_DIM)
         K = np.load(output_K)
         D = np.load(output_D)
 
         balance = 0
         new_K = cv2.fisheye.estimateNewCameraMatrixForUndistortRectify(K, D, DIM, np.eye(3), balance=balance)
-        map1, map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), new_K, DIM, cv2.CV_16SC2)
+        self.map1, self.map2 = cv2.fisheye.initUndistortRectifyMap(K, D, np.eye(3), new_K, DIM, cv2.CV_16SC2)
 
 
     # def tag_map_generator(): # got the 4 poses based on what i set my workdXY frame as
@@ -152,7 +155,7 @@ class Streaming(object):
 
             return tag_map
     
-        def find_pose_from_tag(K, detection):
+        def find_pose_from_tag( K, detection):
             tag_size=0.16
             m_half_size = tag_size / 2
 
@@ -343,7 +346,7 @@ if __name__ == '__main__':
 
     #sharks
     thread0 = threading.Thread(target=lambda: cam1.cammain(0, cordlist, tagid0,stop1))
-    thread1 = threading.Thread(target=lambda: cam1.cammain(1, cordlist1, tagid1,stop2))
+    thread1 = threading.Thread(target=lambda: cam1.cammain(2, cordlist1, tagid1,stop2))
 
     # minnow thread, not using rn
     ###thread2 = threading.Thread(target=lambda: cam1.cammain(2))
@@ -395,8 +398,8 @@ if __name__ == '__main__':
         (message2, ip_address2) = UDPServerSocket2.recvfrom(max_buffer_size) # 2nd socket case
         print('Message received: {}'.format(message2))
 
-        (message3, ip_address3) = UDPServerSocket3.recvfrom(max_buffer_size) # 3rd socket
-        print('Message received: {}'.format(message3))
+        # (message3, ip_address3) = UDPServerSocket3.recvfrom(max_buffer_size) # 3rd socket
+        # print('Message received: {}'.format(message3))
 
         c = 10  #placeholder value,  get distance between the 2 sharks
         
@@ -454,7 +457,7 @@ if __name__ == '__main__':
 
         # either need delay/condition to send movement to minnow. Or make it constant or move and stop.
         #send packet to minnow
-        UDPServerSocket3.sendto(packet_minnow, ip_address3)# 3rd robot
+       # UDPServerSocket3.sendto(packet_minnow, ip_address3)# 3rd robot
 
 
 

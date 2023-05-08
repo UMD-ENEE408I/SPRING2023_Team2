@@ -69,8 +69,8 @@ const char * networkPswd = "goterps2022";
 // either use the ip address of the server or 
 // a network broadcast address
 const char * udpAddress = "192.168.2.142"; // old ip  192.168.2.10
-const int udpPort = 3333; //ports for each, shark 1: 3333, shark 2: 2525, minnow: 2222
-
+const int udpPort = 2525; //ports for each, shark 1: 3333, shark 2: 2525, minnow: 2222
+// CHANGE BEFORE LOADING CODE ONTO EACH MICE
 
 //Are we currently connected?---------------------
 bool connected = false;
@@ -359,10 +359,10 @@ void loop() { //main method
     }
 
     //print the output we are recieving
-    Serial.println("distance ",outpy[0]);
-    Serial.println("heading/angle ",outpy[1]);
-    Serial.println("need to turn is a 1:  ",outpy[2]);
-    Serial.println("tagged minnow is a 1: ",outpy[3]);
+    Serial.printf("dis %f ", outpy[0]);
+    Serial.printf("heading angle %f", outpy[1]);
+    Serial.printf("need to turn is a one %f", outpy[2]);
+    Serial.printf("tagged minnow is a one %f",outpy[3]);
     target_distance = outpy[0]; //new direction/distance 
     target_theta = outpy[1]; //new theta/angle
     float rotate_mice = outpy[2]; //new direction/distance 

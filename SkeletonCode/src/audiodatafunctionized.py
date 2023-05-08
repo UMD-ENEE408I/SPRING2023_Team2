@@ -23,13 +23,13 @@ audio = pyaudio.PyAudio()
 freqs = np.linspace(0, RATE,CHUNK)
 
 class triangulation(object):
-    def __init__(self):
-        self.stream1 = self.open_mic1_stream()
-        self.stream2 = self.open_mic2_stream()
-        self.data1 = self.data()
-        self.fitlter = self.filtered()
-        self.conv = self.conversions()
-        self.inten = self.intensity()
+   #def __init__(self):
+        #self.stream1 = self.open_mic1_stream()
+        #self.stream2 = self.open_mic2_stream()
+        #self.data1 = self.data()
+        # self.fitlter = self.filtered()
+        # self.conv = self.conversions()
+        # self.inten = self.intensity()
 
     def open_mic1_stream():
         stream1 = audio.open(format=audio.get_format_from_width(WIDTH), 
@@ -47,7 +47,7 @@ class triangulation(object):
                         frames_per_buffer=CHUNK)
         return stream2
 
-    def data(stream):
+    def data( stream):
         frames = []
         data = stream.read(CHUNK)
         frames.append(data)
