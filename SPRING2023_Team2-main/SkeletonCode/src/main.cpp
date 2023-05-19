@@ -208,29 +208,8 @@ float update_pid(float dt, float kp, float ki, float kd,
   return u;
 }
 
-// a smooth and interesting trajectory
-// https://en.wikipedia.org/wiki/Lemniscate_of_Bernoulli
-void leminscate_of_bernoulli(float t, float a, float& x, float& y) {
-  float sin_t = sin(t);
-  float den = 1 + sin_t * sin_t;
-  x = a * cos(t) / den;
-  y = a * sin(t) * cos(t) / den;
-}
-
-// Signed angle from (x0, y0) to (x1, y1)
-// assumes norms of these quantities are precomputed
-float signed_angle(float x0, float y0, float n0, float x1, float y1, float n1) {
-  float normed_dot = (x1 * x0 + y1 * y0) / (n1 * n0);
-  if (normed_dot > 1.0) normed_dot = 1.0; // Possible because of numerical error
-  float angle = acosf(normed_dot);
-
-  // use cross product to find direction of rotation
-  // https://en.wikipedia.org/wiki/Cross_product#Coordinate_notation
-  float s3 = x0 * y1 - x1 * y0;
-  if (s3 < 0) angle = -angle;
-
-  return angle;
-}
+// removed lemescate and its signed angle function since they were never used and caused issues.
+// Code should perform as desired now.
 
 //initialize
 void setup() { 
@@ -268,16 +247,8 @@ void loop() { //main method
   // Loop period
   int target_period_ms = 2; // Loop takes about 3 ms so a delay of 2 gives 200 Hz or 5ms
 
-  // States used to calculate target velocity and heading
-  float leminscate_a = 0.5; // Radius
-  float leminscate_t_scale = 2.0; // speedup factor
-  float x0, y0;
-  leminscate_of_bernoulli(0.0, leminscate_a, x0, y0);
-  float last_x, last_y;
-  leminscate_of_bernoulli(-leminscate_t_scale * target_period_ms / 1000.0, leminscate_a, last_x, last_y);
-  float last_dx = (x0 - last_x) / ((float)target_period_ms / 1000.0);
-  float last_dy = (y0 - last_y) / ((float)target_period_ms / 1000.0);
-  float last_target_v = sqrtf(last_dx * last_dx + last_dy * last_dy);
+  //NOTE: removed lemescate code that caused issues in our demo video
+  
   float target_theta = 0.0; // This is an integrated quantity
 
   // Motors are controlled by a position PID
@@ -450,37 +421,11 @@ void loop() { //main method
     theta = theta + omega * dt;
 
 
-    // Serial.print(" omega "); Serial.print(omega);
-    // Serial.print(" theta "); Serial.print(theta);
+    //NOTE: removed all the lemescate code that we forgot to remove during our demo video.
 
-    // Calculate target forward velocity and target heading to track the leminscate trajectory
-    // of 0.5 meter radius
-    float x, y;
-    leminscate_of_bernoulli(leminscate_t_scale * t, leminscate_a, x, y);
-  //----------------- the command to actually move the robot
+    float target_v = 0.5; // forward velocity, might want to make it constant
 
 
-  
-    // Serial.print(" x "); Serial.print(x);
-    // Serial.print(" y "); Serial.print(y);
-
-    float dx = (x - last_x) / dt;
-    float dy = (y - last_y) / dt;
-    float target_v = sqrtf(dx * dx + dy * dy); // forward velocity, might want to make it constant
-    //////float target_v = sqrtf(dx * dx + dy * dy); // forward velocity
-
-    // Serial.print(" dx "); Serial.print(dx);
-    // Serial.print(" dy "); Serial.print(dy);
-    // Serial.print(" tv "); Serial.print(target_v);
-
-    // Serial.print(" target_omega "); Serial.print(target_omega);
-    // Serial.print(" t theta "); Serial.print(target_theta);
-
-    last_x = x;
-    last_y = y;
-    last_dx = dx;
-    last_dy = dy;
-    last_target_v = target_v;
   
     // Calculate target motor speeds from target forward speed and target heading
     // Could also include target path length traveled and target angular velocity
@@ -497,11 +442,6 @@ void loop() { //main method
     target_pos_left  = target_pos_left  + dt * target_v_left;
     target_pos_right = target_pos_right + dt * target_v_right;
 
-
-    // Serial.print(" tpl "); Serial.print(target_pos_left);
-    // Serial.print(" pl "); Serial.print(pos_left);
-    // Serial.print(" tpr "); Serial.print(target_pos_right);
-    // Serial.print(" pr "); Serial.print(pos_right);
 
     // Left motor position PID
     float left_voltage = update_pid(dt, kp_left, ki_left, kd_left,
@@ -531,7 +471,14 @@ void loop() { //main method
       set_motors_pwm(0,0);// got to the desired distance
       break;
     }else{
-      set_motors_pwm(left_pwm, right_pwm);
+      if((pos_left + pos_right)/2 >= target_distance ){ //reached target distance, check if we hit it.
+        Serial.print("Got to distance ");
+        set_motors_pwm(0,0);// got to the desired distance
+      }
+      else{
+        set_motors_pwm(left_pwm, right_pwm);
+      }
+
     }
 
     //ADDED SINCE WE are either sending in speed, or sending in distance. 
